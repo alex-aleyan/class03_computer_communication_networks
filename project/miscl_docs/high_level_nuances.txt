@@ -1,0 +1,102 @@
+// if ack is unset, indicates lines to be tx'd or line tag of tx'd line, if ack set indicates the line the server is requesting
+typedef struct file_x_app_layer{
+    unsigned int file_id       : 16;
+    unsigned int current_line  : 16; 
+    unsigned int total_lines   : 16;
+    unsigned int ack           : 1; 
+    unsigned int init          : 1;
+    unsigned int kill          : 1;
+    unsigned int reserved      : 13;
+
+} file_x_app_layer_t;
+
+Client needs to:
+  Get file's source /<path>/<filename>
+  Get file's destination /<path>/<filename>
+  Create file_id (24-bit id=yy[8],mm[4],dd[5],ss[6],us[1]) per file transfer.
+
+Initiation Header needs to have:
+  file name tag,
+  destination /<path>/<filename>
+  number of text lines to transfer for current file
+
+1. Server listens for init packet.
+2. Client sends init packet specifying next parameters using these fields: 
+    A. current_line: specifies the desired timeout value in seconds.
+    B. total_lines: number of files to be sent so server can allocate memory per each file.
+    C. init: is set to specify that this packet is an init packet.
+    D. file_id: set to all 1's to specify this is a transfer init packet (server ignores duplciates if received during transfer).
+    E. pay load: containing file_id fields for each file to be trasnferred trailed by the destination <path/filename>
+3. Server upon receival of the above packet:
+    A. creates an array[total_lines] of structures. 
+    B. a creation of an array of structures with next fields:
+        i. file_id set to all vaues received in init packet.
+        ii. line pointers pointing to NULLs.
+        iii. expected lines record mask pointer set to NULL
+        iv.  received line record mask pointer set to null
+        v. all_done field set to 0.
+    C*. replies with a copy of the same packet (dup requests are ignored) but:
+        i. without a payload.
+        ii. ack: is set.
+        iii. current_line: specifies the timeout value in seconds granted by the server.
+4. Client starts sending packets with fields set to next values (and listens for an ACK requesting repeat; or FIN confirming receival of the data):
+    file_id:          {min[6],sec[6],file[4]} up to 16 files.
+    current_line[16]: specifies the line's number.
+    total_lines[16]:  specifies the total number of lines per current file.
+    pay load:         containing the actual line
+5. For each packet(4) received, server:
+    A. Check if INIT; if init respond with ACK
+    B. CHeck if FIN and ACK are set; if YES but not all data received; terminate with error.
+    C. If data received, check the file number and file ID and see if all lines for file number already received
+       If not, check if the line already received, if not store the line.
+    D. Check if all received is set, if yes, send FIN and wait until client responds with FIN|ACK packet to terminate; resend FIN if non FIN|ACK packet received.
+    OTHER: Checks if an array's element with matching ID already exists:
+        i If does not exist, performed on the server:
+            a. a creation of an array of structures with next fields:
+                I.   set file_id to the file_id of the received packet.
+                II.  an array of char * line_pointers[total_lines] where each pointer points to allocated memory storing the text. 
+                III. a pointer to "expected lines record mask" and set the bits based on total_lines value!
+                IV.  a pointer to "recieved lines record mask" and initialize to 0
+                V.   all_done field indicating successfule comparison of the 2 fields above!
+            b. allocation a memory of size (total_lines/8+1) for "expected lines record mask" and "received lines record mask"
+        ii. if exists or d.n. exist
+            a. allocate memory to store the string and set the appropriate line_pointer.
+            b. set the appropriate bit in the "received lines record mask"
+            c. compare the "received lines record mask" against "expected lines record mask" and set the all_done field appropriately.
+            e. check if all "all_done" fiels are set indicating successful transfer; if yes then send FIN; if no and timeout occured, send ACK to request repetition.
+
+
+
+State1: Server awaits a connection request and init packet.
+
+State2: Client sends init packet to Server:
+    file_id[16]: {yy[8]+mm[4]+dd[5] , ss[6]} = {date[10],ss[6]}  per file transfer.
+    lines[16]:    number of text lines to be transmitted (so the server know how much space to allocate)
+    payload_size[16]:current payload size.
+    tx_ordered[1]: client requests a tx method but upto server to decide which one it prefers.
+        1-send burst of packets each packet containing a single line; 
+        0-wait for acks from Servers used by server to request a line.
+    reserved[15]
+    payload: full path to file as the payload.
+
+State3: Server received the init packet:
+    Server registers file_id
+    Server registers tx_ordered (only tx_ordered 0 is implemented for now)
+    Servers tries to allocate memory (if unsucc; respond with abort; lines[16]=0)
+    Server checks the desired destination using init packet's payload info (if directory d.n. exist or fail to open a file in general, respond with abort; lines[16]=0)
+    Server responds with the same packet used as an ack  (setting the lines[16] value to 0 to indicate an abort)
+
+State4: Client receives the ack packet 
+    Checks the file_id to determine to what file transfer the ack corresponds.
+    Client checks the tx_ordered to see if Server agreeed to use the desired method or insists on Server's method.
+    Client sends a burst of packets, or sends one packet/line at the time looking for Server to ack each delivery with response (response same as State3 packet but lines=<num of next line to be send by client>)
+    The packets sent by client from this point use fields in this manner:
+        file_id: stays the same
+        lines: indicate a line number the payload contains.
+        payload_size: as before.
+        tx_ordered: don't care
+        reserved: don't care
+        payload: actual content of the line. 
+    
+    
+

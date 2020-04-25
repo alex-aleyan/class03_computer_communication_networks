@@ -1,0 +1,87 @@
+
+B.1
+    Server uses udp port 7777 per project requirements.
+    Client uses udp port 7778.
+    As per project requirement, the client specifies the FILENAME, TOTAL NUMBER OF LINES, and LINE NUMBER in the application layer of each packet.
+    As per project requirement, the server using information mentioned above reconstructs the file, stores the file on the server and retransmits the reconstructed file back as a single packet.
+    As per project requirement, the server does not send a FIN to Client until all data is received.
+    Still need to handle a case where timeout more than certain times.
+    Deallocation of memory left to OS; therefore the server can only handle one transfer per program run.
+    
+B.2 - Extra credit:
+    The Client and Server programs use calloc() to allocate the exact amount of memory as required by each line of the file instead of using arrays of elements of fixed number of bytes where each element stores a line; using calloc() to dynamically allocate the memory increased the code complexity with the benefit of memory conservation. The code complexity was also increased since each line of the file had to be manually parsed to count the characters per line and to determine the number of lines in each file.
+    Both Client and Server implement GNU's Argp() to parse the arguments which specify such information as ip, port, source file, destination file instead of hard typing this information. This feature added flexibility at the cost on increased code complexity.
+    While the project requirement does not specify it as a requirement, the socket timeout option is implemented to improve reliability.
+    To run, the program has these MACROs set in the project/sw/client/makefile and project/sw/server/makefile:
+      -DMAX_NUM_OF_FILES=10 
+      -DMAX_NUM_OF_LINES=1024 
+      -DRECEIVE_BUFFER_SIZE=9000
+B.3
+
+  DEMONSTRATION:
+  
+    project/demonstration
+  
+  MANUALLY RUN DEMONSTRATION:
+  
+      1. Build the software by running:
+      
+          project/makeall.sh
+      
+      2. Please launch the server and client application like this (order does not matter but server first is preferred):
+      
+          project/sw/server/server.run --source-ip 127.0.0.1 
+                                      --source-port=7777 
+                                      -v -x 
+      
+      
+          project/sw/client/client.run --source-ip 127.0.0.1
+                                      --source-port 7778
+                                      --dest-ip 127.0.0.1
+                                      --dest-port 7777
+                                      --output-file file.txt
+                                      -v -x
+                                      file0.txt file1.txt file2.txt file3.txt file4.txt file5.txt file6.txt file7.txt file8.txt file9.txt
+                                      
+CLIENT:                                     
+  typedef enum {
+      SEND_INIT,
+      RECEIVE_INIT_ACK,
+      SEND_DATA,
+      RECEIVE_FIN_DATA,
+      SEND_FIN_ACK,
+      RECIEVE_FIN_ACK,
+  } fsm_state_t;
+
+
+
+SERVER:
+  typedef enum {
+      LISTEN_FOR_INIT,
+      SEND_INIT_ACK,
+      RECEIVE_DATA,
+      SEND_FIN_DATA,
+      RECEIVE_FIN_ACK,
+      SEND_FIN_ACK,
+  } fsm_state_t;
+
+  
+typedef struct file_x_app_layer{
+    unsigned int file_id       : 16;
+    unsigned int file_number   : 8;
+    unsigned int current_line  : 16; 
+    unsigned int total_lines   : 16;
+    unsigned int ack           : 1; 
+    unsigned int init          : 1; 
+    unsigned int fin           : 1; 
+    unsigned int reserved      : 5;
+} file_x_app_layer_t;
+
+typedef struct file_info{
+    unsigned int file_id                 : 16;
+    unsigned int file_number             : 8;
+    unsigned int number_of_lines_in_file : 16;
+    char * received_line_record;
+    char done;
+    //char * text_line[]; //<-- won't work; must know the array size at instantation.
+    char * tex
