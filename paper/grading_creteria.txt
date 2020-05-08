@@ -1,0 +1,38 @@
+Intra-Vehicular Network Survey Paper (iluminating wires)
+
+1. Good choice of papers/sources (at least 6 IEEE Conferences and IEEE Journals; 
+   IEEE spectrum cannot be used as a source but a good starting point)
+2. Is the abstract engaging.
+3. How well are ideas of the papers integrated together into your single paper.
+
+Pointers:
+Get as much info as possible and condense it down to a 10 page paper
+11 point Time New Roman font; Single Column Format; 1.5 line spacing; 1 column format
+IEEE Structure: Title, Abstract, Intro, Discussion & Results, Conclusion, References.
+How to write a survey paper:
+    Start with appropriate Title ()
+    Abstract: tells you what the idea the paper discusses and the significant discoveries
+    Intro: introduces the problem what trying to solve and brief outline of literature; discusses 
+           advantages/disadvantages of certain puns? Eplain the sections
+    Conclusion
+
+Do NOT summarize papers one by one.
+Avoid marginal papers.
+Start identifying summinal papers in the area (they are referenced by other papers)
+Once get 6-7 mainstream papers, you got a start.
+Read thru Abstract, Intro and Conlusion to judge the paper  before reading it.
+Try to understand the central idea of every paper before starting to write.
+Try to write each section per idea comparing and contrasting ideas; try to find similarities and so on.
+Provide citations to the figures in the captions!
+Upload a PDF file NOT DOC!!!
+
+
+Paper 04437827 Intra-vehicular Wireless Networks
+    explore suitable wireless technologies
+    highlight unresolved network system architecture issues for
+    provide a framework for the design of such networks
+    characteristics of a prospective intra-vehicular wireless network,
+    survey of current short-range wireless standards and evaluate their suitability for wireless automotive sensor networks (WASN).
+
+
+
